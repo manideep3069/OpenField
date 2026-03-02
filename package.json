@@ -1,0 +1,15 @@
+{
+  "name": "openfield",
+  "private": true,
+  "workspaces": ["apps/*"],
+  "scripts": {
+    "dev:api": "npm run dev -w @openfield/api",
+    "dev:web": "npm run dev -w @openfield/web",
+    "build": "npm run build -w @openfield/api && npm run build -w @openfield/web",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
