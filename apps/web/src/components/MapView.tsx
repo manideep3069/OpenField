@@ -2,13 +2,20 @@ import { useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import type { Field } from "../types";
 
+const STYLE_URL =
+  "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
+
 interface MapViewProps {
   fields: Field[];
   onDrawComplete?: (coordinates: number[][][]) => void;
   drawing?: boolean;
 }
 
-export function MapView({ fields, onDrawComplete, drawing = false }: MapViewProps) {
+export function MapView({
+  fields,
+  onDrawComplete,
+  drawing = false,
+}: MapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const drawRef = useRef<{ lng: number; lat: number }[]>([]);
@@ -18,7 +25,7 @@ export function MapView({ fields, onDrawComplete, drawing = false }: MapViewProp
     if (!containerRef.current) return;
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: "https://demotiles.maplibre.org/style.json",
+      style: STYLE_URL,
       center: [0, 20],
       zoom: 2,
     });
@@ -31,13 +38,14 @@ export function MapView({ fields, onDrawComplete, drawing = false }: MapViewProp
     };
   }, []);
 
-  // Draw saved fields as fill layers
   useEffect(() => {
     if (!mapRef.current || !mapReady) return;
     const map = mapRef.current;
     const sourceId = "fields-source";
-    const layerId = "fields-fill";
-    if (map.getLayer(layerId)) map.removeLayer(layerId);
+    const fillId = "fields-fill";
+    const outlineId = "fields-outline";
+    if (map.getLayer(outlineId)) map.removeLayer(outlineId);
+    if (map.getLayer(fillId)) map.removeLayer(fillId);
     if (map.getSource(sourceId)) map.removeSource(sourceId);
     if (fields.length === 0) return;
     map.addSource(sourceId, {
@@ -52,33 +60,41 @@ export function MapView({ fields, onDrawComplete, drawing = false }: MapViewProp
       },
     });
     map.addLayer({
-      id: layerId,
+      id: fillId,
       type: "fill",
       source: sourceId,
       paint: {
         "fill-color": "#22c55e",
-        "fill-opacity": 0.4,
-        "fill-outline-color": "#15803d",
+        "fill-opacity": 0.35,
+      },
+    });
+    map.addLayer({
+      id: outlineId,
+      type: "line",
+      source: sourceId,
+      paint: {
+        "line-color": "#15803d",
+        "line-width": 2,
       },
     });
   }, [mapReady, fields]);
 
-  // Drawing mode: click to add points, double-click to finish
   useEffect(() => {
     if (!mapRef.current || !mapReady || !drawing || !onDrawComplete) return;
     const map = mapRef.current;
-    const cursor = "crosshair";
-    map.getCanvas().style.cursor = cursor;
+    map.getCanvas().style.cursor = "crosshair";
 
     const onClick = (e: maplibregl.MapMouseEvent) => {
-      const { lng, lat } = e.lngLat;
-      drawRef.current.push({ lng, lat });
+      drawRef.current.push({ lng: e.lngLat.lng, lat: e.lngLat.lat });
     };
 
     const onDblClick = (e: maplibregl.MapMouseEvent) => {
       e.preventDefault();
       if (drawRef.current.length < 3) return;
-      const ring = [...drawRef.current.map((p) => [p.lng, p.lat]), [drawRef.current[0].lng, drawRef.current[0].lat]];
+      const ring = [
+        ...drawRef.current.map((p) => [p.lng, p.lat]),
+        [drawRef.current[0].lng, drawRef.current[0].lat],
+      ];
       onDrawComplete([ring]);
       drawRef.current = [];
     };

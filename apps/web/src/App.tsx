@@ -1,59 +1,68 @@
 import { useState, useCallback, useEffect } from "react";
 import { MapView } from "./components/MapView";
-import { Map3DView } from "./components/Map3DView";
 import { FieldList } from "./components/FieldList";
 import { api } from "./api/client";
-import type { Field, Region } from "./types";
-import "maplibre-gl/dist/maplibre-gl.css";
+import type { Field } from "./types";
 
 const DEFAULT_BBOX: [number, number, number, number] = [-10, 35, 40, 70];
 
 type ViewMode = "2D" | "3D";
 
+let Map3DViewLazy: typeof import("./components/Map3DView").Map3DView | null =
+  null;
+
 export default function App() {
-  const [regions, setRegions] = useState<Region[]>([]);
   const [fields, setFields] = useState<Field[]>([]);
   const [selectedRegionId, setSelectedRegionId] = useState<string | null>(null);
   const [selectedField, setSelectedField] = useState<Field | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("2D");
   const [drawing, setDrawing] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [apiStatus, setApiStatus] = useState<{
+    ok: boolean;
+    db: boolean;
+  } | null>(null);
+  const [map3DReady, setMap3DReady] = useState(false);
+
+  useEffect(() => {
+    api.health().then((status) => {
+      setApiStatus(status);
+      if (status.ok && status.db) {
+        loadRegions();
+        loadFields();
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    import("./components/Map3DView").then((mod) => {
+      Map3DViewLazy = mod.Map3DView;
+      setMap3DReady(true);
+    });
+  }, []);
 
   const loadRegions = useCallback(async () => {
-    setLoading(true);
-    setError(null);
     try {
       const list = await api.regions.list();
-      setRegions(list);
-      if (list.length > 0) setSelectedRegionId((prev) => prev || list[0].id);
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      setLoading(false);
+      if (list.length > 0)
+        setSelectedRegionId((prev) => prev || list[0].id);
+    } catch {
+      // silently fail
     }
   }, []);
 
   const loadFields = useCallback(async () => {
-    setLoading(true);
-    setError(null);
     try {
       const list = await api.fields.list(selectedRegionId ?? undefined);
       setFields(list);
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      setLoading(false);
+    } catch {
+      // keep current list
     }
   }, [selectedRegionId]);
 
   useEffect(() => {
-    loadRegions();
-  }, []);
-
-  useEffect(() => {
-    loadFields();
-  }, [loadFields]);
+    if (apiStatus?.db) loadFields();
+  }, [apiStatus, loadFields]);
 
   const ensureRegion = useCallback(async (): Promise<string> => {
     if (selectedRegionId) return selectedRegionId;
@@ -61,13 +70,16 @@ export default function App() {
       name: "Default region",
       bbox: DEFAULT_BBOX,
     });
-    setRegions((r) => [created, ...r]);
     setSelectedRegionId(created.id);
     return created.id;
   }, [selectedRegionId]);
 
   const handleDrawComplete = useCallback(
     async (coordinates: number[][][]) => {
+      if (!apiStatus?.db) {
+        setError("Database is not running — cannot save fields.");
+        return;
+      }
       setError(null);
       try {
         const regionId = await ensureRegion();
@@ -80,7 +92,7 @@ export default function App() {
         setError(String(e));
       }
     },
-    [ensureRegion, fields.length, loadFields]
+    [apiStatus, ensureRegion, fields.length, loadFields]
   );
 
   const handleDeleteField = useCallback(
@@ -96,11 +108,24 @@ export default function App() {
     [loadFields]
   );
 
+  const switchTo3D = useCallback(() => {
+    setViewMode("3D");
+    setDrawing(false);
+  }, []);
+
+  const statusMessage =
+    apiStatus === null
+      ? null
+      : !apiStatus.ok
+        ? "API server is offline — map works, but saving/loading requires the API."
+        : !apiStatus.db
+          ? "Database is offline — map works, but saving/loading requires PostGIS."
+          : null;
+
   return (
     <div className="app">
       <header className="app-header">
         <h1>OpenField</h1>
-        <span className="app-meta">Regions: {regions.length}</span>
         <div className="app-actions">
           <button
             type="button"
@@ -112,15 +137,10 @@ export default function App() {
           <button
             type="button"
             className={viewMode === "3D" ? "active" : ""}
-            onClick={() => setViewMode("3D")}
+            onClick={switchTo3D}
+            disabled={!map3DReady}
           >
             3D
-          </button>
-          <button type="button" onClick={loadRegions}>
-            Load regions
-          </button>
-          <button type="button" onClick={loadFields}>
-            Load fields
           </button>
           {viewMode === "2D" && (
             <button
@@ -131,10 +151,17 @@ export default function App() {
               {drawing ? "Cancel draw" : "Draw field"}
             </button>
           )}
+          {apiStatus?.db && (
+            <button type="button" onClick={loadFields}>
+              Refresh
+            </button>
+          )}
         </div>
       </header>
+
+      {statusMessage && <div className="notice">{statusMessage}</div>}
       {error && <div className="error">{error}</div>}
-      {loading && <div className="loading">Loading…</div>}
+
       <div className="app-body">
         <aside className="sidebar">
           <h2>Fields</h2>
@@ -152,8 +179,8 @@ export default function App() {
           <FieldList
             fields={fields}
             selectedFieldId={selectedField?.id ?? null}
-            onSelect={(f) => setSelectedField(f)}
-            onDelete={handleDeleteField}
+            onSelect={setSelectedField}
+            onDelete={apiStatus?.db ? handleDeleteField : undefined}
           />
         </aside>
         <main className="map-main">
@@ -164,12 +191,15 @@ export default function App() {
               onDrawComplete={handleDrawComplete}
             />
           )}
-          {viewMode === "3D" && (
-            <Map3DView
+          {viewMode === "3D" && map3DReady && Map3DViewLazy && (
+            <Map3DViewLazy
               fields={fields}
               selectedFieldId={selectedField?.id ?? null}
               onSelectField={setSelectedField}
             />
+          )}
+          {viewMode === "3D" && !map3DReady && (
+            <div className="loading-3d">Loading 3D engine...</div>
           )}
         </main>
       </div>

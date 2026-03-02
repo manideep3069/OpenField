@@ -36,3 +36,7 @@ docker-compose.override.yml
 # Misc
 *.local
 .cache/
+
+# Test artifacts
+output/
+scripts/check-page.mjs

@@ -7,7 +7,12 @@ interface FieldListProps {
   onDelete?: (id: string) => void;
 }
 
-export function FieldList({ fields, selectedFieldId, onSelect, onDelete }: FieldListProps) {
+export function FieldList({
+  fields,
+  selectedFieldId,
+  onSelect,
+  onDelete,
+}: FieldListProps) {
   if (fields.length === 0) {
     return (
       <div className="field-list empty">
