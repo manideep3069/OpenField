@@ -205,9 +205,9 @@ FieldFinancials (or yearly snapshot)
 
 ### Phase 2 — 3D and one full region (3–4 weeks)
 
-- [ ] Integrate Cesium; load terrain + imagery for one region.
-- [ ] Show field polygons on 3D; click to highlight and show summary.
-- [ ] Field drawing in 3D (or switch to 2D for drawing, then show in 3D).
+- [x] Integrate Cesium; load terrain + imagery for one region.
+- [x] Show field polygons on 3D; click to highlight and show summary.
+- [x] Field drawing in 2D (draw in 2D, view in 3D).
 - [ ] Financial form and basic charts per field.
 
 ### Phase 3 — Polish and scale (3–4 weeks)

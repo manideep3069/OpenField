@@ -2,11 +2,12 @@ import type { Field } from "../types";
 
 interface FieldListProps {
   fields: Field[];
-  onDelete?: (id: string) => void;
+  selectedFieldId?: string | null;
   onSelect?: (field: Field) => void;
+  onDelete?: (id: string) => void;
 }
 
-export function FieldList({ fields, onDelete, onSelect }: FieldListProps) {
+export function FieldList({ fields, selectedFieldId, onSelect, onDelete }: FieldListProps) {
   if (fields.length === 0) {
     return (
       <div className="field-list empty">
@@ -17,7 +18,10 @@ export function FieldList({ fields, onDelete, onSelect }: FieldListProps) {
   return (
     <ul className="field-list">
       {fields.map((f) => (
-        <li key={f.id} className="field-item">
+        <li
+          key={f.id}
+          className={`field-item ${selectedFieldId === f.id ? "selected" : ""}`}
+        >
           <button
             type="button"
             className="field-name"

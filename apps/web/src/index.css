@@ -33,6 +33,11 @@ body {
   font-size: 1.25rem;
 }
 
+.app-meta {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
 .app-actions {
   display: flex;
   gap: 0.5rem;
@@ -88,6 +93,32 @@ body {
   margin: 0 0 0.75rem;
   font-size: 1rem;
   font-weight: 600;
+}
+
+.field-summary {
+  padding: 0.5rem 0;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 0.875rem;
+}
+
+.field-summary strong {
+  display: block;
+}
+
+.field-summary button {
+  margin-top: 0.25rem;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  background: #f1f5f9;
+  cursor: pointer;
+}
+
+.field-item.selected {
+  background: #dcfce7;
+  border-radius: 4px;
 }
 
 .field-list {

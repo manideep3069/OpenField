@@ -7,7 +7,8 @@
     "dev:web": "npm run dev -w @openfield/web",
     "build": "npm run build -w @openfield/api && npm run build -w @openfield/web",
     "db:up": "docker compose up -d",
-    "db:down": "docker compose down"
+    "db:down": "docker compose down",
+    "db:migrate": "npm run db:migrate -w @openfield/api"
   },
   "engines": {
     "node": ">=18"

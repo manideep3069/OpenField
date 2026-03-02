@@ -1,9 +1,9 @@
 import { Router } from "express";
 import * as regionsService from "../services/regions.js";
 
-export const router = Router();
+export const regionsRouter = Router();
 
-router.get("/", async (_req, res) => {
+regionsRouter.get("/", async (_req, res) => {
   try {
     const rows = await regionsService.list();
     res.json(rows);
@@ -12,7 +12,7 @@ router.get("/", async (_req, res) => {
   }
 });
 
-router.get("/:id", async (req, res) => {
+regionsRouter.get("/:id", async (req, res) => {
   try {
     const row = await regionsService.getById(req.params.id);
     if (!row) return res.status(404).json({ error: "Region not found" });
@@ -22,7 +22,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-router.post("/", async (req, res) => {
+regionsRouter.post("/", async (req, res) => {
   try {
     const { name, description, bbox } = req.body;
     if (!name || !bbox || !Array.isArray(bbox) || bbox.length !== 4) {
@@ -35,7 +35,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.patch("/:id", async (req, res) => {
+regionsRouter.patch("/:id", async (req, res) => {
   try {
     const row = await regionsService.update(req.params.id, req.body);
     if (!row) return res.status(404).json({ error: "Region not found" });
@@ -45,7 +45,7 @@ router.patch("/:id", async (req, res) => {
   }
 });
 
-router.delete("/:id", async (req, res) => {
+regionsRouter.delete("/:id", async (req, res) => {
   try {
     const ok = await regionsService.remove(req.params.id);
     if (!ok) return res.status(404).json({ error: "Region not found" });

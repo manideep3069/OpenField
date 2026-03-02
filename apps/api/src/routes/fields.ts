@@ -1,9 +1,9 @@
 import { Router } from "express";
 import * as fieldsService from "../services/fields.js";
 
-export const router = Router();
+export const fieldsRouter = Router();
 
-router.get("/", async (req, res) => {
+fieldsRouter.get("/", async (req, res) => {
   try {
     const regionId = req.query.region_id as string | undefined;
     const rows = regionId
@@ -15,7 +15,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.get("/:id", async (req, res) => {
+fieldsRouter.get("/:id", async (req, res) => {
   try {
     const row = await fieldsService.getById(req.params.id);
     if (!row) return res.status(404).json({ error: "Field not found" });
@@ -25,7 +25,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-router.post("/", async (req, res) => {
+fieldsRouter.post("/", async (req, res) => {
   try {
     const { region_id, name, boundary } = req.body;
     if (!region_id || !name || !boundary?.type || boundary.type !== "Polygon") {
@@ -40,7 +40,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.patch("/:id", async (req, res) => {
+fieldsRouter.patch("/:id", async (req, res) => {
   try {
     const row = await fieldsService.update(req.params.id, req.body);
     if (!row) return res.status(404).json({ error: "Field not found" });
@@ -50,7 +50,7 @@ router.patch("/:id", async (req, res) => {
   }
 });
 
-router.delete("/:id", async (req, res) => {
+fieldsRouter.delete("/:id", async (req, res) => {
   try {
     const ok = await fieldsService.remove(req.params.id);
     if (!ok) return res.status(404).json({ error: "Field not found" });
