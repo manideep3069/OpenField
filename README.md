@@ -25,3 +25,7 @@ npm run dev:web
 ```
 
 See [docs/PLAN.md](docs/PLAN.md) for full plan.
+
+## Workflow
+
+- **Push to GitHub is mandatory** after making changes: commit and push each logical change.
